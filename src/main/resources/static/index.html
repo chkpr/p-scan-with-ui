@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Port Scanner</title>
+<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+	href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap"
+	rel="stylesheet">
+</head>
+
+<body>
+	<header>
+		<div class="logo">p-scan</div>
+	</header>
+
+	<main>
+		<section class="scanner">
+			<div class="scanner-box">
+				<h1>Configure Scan</h1>
+				<form id="scan-form">
+					<ul>
+						<li><label for="host">Host</label><br> <input
+							type="text" id="host" name="scan_host" /></li>
+
+						<li><label for="portsRange">Ports range</label><br> <input
+							type="text" id="portsRange" name="scan_portsRange" /></li>
+
+						<li><label for="threads">Threads</label><br> <input
+							type="text" id="threads" name="scan_threads" /></li>
+					</ul>
+					<button>Start scanning</button>
+				</form>
+			</div>
+		</section>
+		<section class="scan-results">
+			<div class="results-header">Scan results</div>
+			<div id="results-content">
+				<p class="placeholder">No scan results yet.</p>
+			</div>
+		</section>
+	</main>
+
+	<footer>
+		<div class="footer">© 2026 P-SCAN</div>
+	</footer>
+</body>
+</html>
