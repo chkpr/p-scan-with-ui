@@ -108,6 +108,14 @@ footer {
     border-bottom: 1px solid #434543;
 }
 
+.scan-progress {
+	display: flex;
+    gap: 40px;
+    padding: 10px 40px;
+    border-bottom: 1px solid #434543;
+    font-size: 14px;
+}
+
 .placeholder {
     padding: 20px 40px;
     font-size: 14px;

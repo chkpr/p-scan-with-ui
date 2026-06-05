@@ -24,22 +24,28 @@
 				<form id="scan-form">
 					<ul>
 						<li><label for="host">Host</label><br> <input
-							type="text" id="host" name="scan_host" placeholder="Ex: scanme.nmap.org" autocomplete="off"/></li>
+							type="text" id="host" name="scan_host"
+							placeholder="Ex: scanme.nmap.org" autocomplete="off" /></li>
 
 						<li><label for="portsRange">Ports range</label><br> <input
-							type="text" id="portsRange" name="scan_portsRange" placeholder="Ex: 0-1024" autocomplete="off"/></li>
+							type="text" id="portsRange" name="scan_portsRange"
+							placeholder="Ex: 1-1024" autocomplete="off" /></li>
 
 						<li><label for="threads">Threads</label><br> <input
-							type="text" id="threads" name="scan_threads" placeholder="Ex: 50 (leave empty for default value)" autocomplete="off"></li>
+							type="text" id="threads" name="scan_threads"
+							placeholder="Ex: 50 (leave empty for default value)"
+							autocomplete="off"></li>
 					</ul>
 					<button>Start scanning</button>
 					<button type="button" id="stop-button">Stop scan</button>
-					<button type="button" onclick="resetForm()" >Reset form fields</button>
+					<button type="button" onclick="resetForm()">Reset form
+						fields</button>
 				</form>
 			</div>
 		</section>
 		<section class="scan-results">
 			<div class="results-header">Scan results</div>
+			<div id="progress-content" class="scan-progress">Scanning port</div>
 			<div id="results-content">
 				<p class="placeholder">No scan results yet.</p>
 			</div>
@@ -50,7 +56,7 @@
 		<div class="footer">© 2026 P-SCAN</div>
 	</footer>
 
-<script>
+	<script>
 document.getElementById('scan-form').addEventListener('submit', function(e) {
 	e.preventDefault();
 	const host = document.getElementById('host').value;
@@ -59,7 +65,28 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 	const startPort = range[0] || 1;
 	const endPort = range[1] || 1024;
 	
-	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>';	
+	const interval = setInterval(function() {
+		fetch(`/api/progress`)
+		 // Handling the response asynchronously
+   .then(response => response.json())
+   
+   // Processing the parsed JSON data
+   .then(data => {
+       const scanProgress = data.progress + "/" + data.total;
+       if (data.total > 0 && data.progress === data.total ) {
+    	   clearInterval(interval);
+       }
+       document.getElementById('progress-content').innerHTML = scanProgress;
+   })
+   
+   .catch(error => {
+       console.error('Error fetching data:', error);
+   });
+	
+	
+	}, 1000);
+	
+	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>' ;
 	
 	 fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
 		.then(r=> r.json())
@@ -69,7 +96,7 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 			} else {
 				const rows = data.map(r =>
 					`<div class="result-row">
-						<span class="port">Port ${r.port}</span>
+						<span class="portNumber">Port ${r.portNumber}</span>
 						<span class="service">${r.service}</span>
 						<span class="time">${r.responseTime}ms</span>
 					</div>`
@@ -90,11 +117,9 @@ document.getElementById('stop-button').addEventListener('click', function(){
 });
 
 
-	function resetForm() {
-	  document.getElementById("scan-form").reset();
-	}
-	
-	
+function resetForm() {
+	 document.getElementById("scan-form").reset();
+}	
 </script>
 
 </body>

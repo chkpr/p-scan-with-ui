@@ -1,7 +1,10 @@
 package com.learning.pScanWithUi;
 
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
@@ -26,8 +29,11 @@ public class ScanController {
 		PortScanner.stop();
 	}
 	
-	
-
-	
-
+	@GetMapping("/progress")
+	public Map<String, Integer> getProgress() {
+		Map<String, Integer> result = new HashMap<>();
+		result.put("progress", PortScanner.progress.get());
+		result.put("total", PortScanner.totalPorts);
+		return result;
+	}
 }
