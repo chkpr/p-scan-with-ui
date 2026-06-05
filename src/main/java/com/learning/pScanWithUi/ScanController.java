@@ -3,6 +3,7 @@ package com.learning.pScanWithUi;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 
 @RestController
 @RequestMapping("/api")
@@ -18,6 +19,11 @@ public class ScanController {
 	) throws InterruptedException, ExecutionException {
 		
 		return PortScanner.scanRangeParallel(host, startPort, endPort, threads, timeoutMs);
+	}
+	
+	@GetMapping("/stop")
+	public void stopScanning() {
+		PortScanner.stop();
 	}
 	
 	

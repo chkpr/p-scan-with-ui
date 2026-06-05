@@ -17,6 +17,8 @@ public class PortScanner {
 	 * @param timeoutMS délai d'attente maximum en millisecondes
 	 * @return true si le port est ouvert, false sinon
 	 */
+	
+	private static ExecutorService executor;
 
 	public static boolean isPortOpen(String host, int port, int timeoutMs) {
 		try (Socket socket = new Socket()) {
@@ -76,12 +78,10 @@ public class PortScanner {
 	public static List<ScanResult> scanRangeParallel(String host, int startPort, int endPort, int threads, int timeoutMs)
 			throws InterruptedException, ExecutionException {
 
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		executor = Executors.newFixedThreadPool(threads);
 		ConcurrentLinkedQueue<ScanResult> openPorts = new ConcurrentLinkedQueue<>();
 		List<Future<?>> futures = new ArrayList<>();
 		long startTime = System.currentTimeMillis();
-
-
 
 		for (int port = startPort; port <= endPort; port++) {
 			final int p = port;
@@ -104,14 +104,16 @@ public class PortScanner {
 		List<ScanResult> sorted = new ArrayList<>(openPorts);
 		sorted.sort(Comparator.comparingInt(ScanResult::getPort));
 		{
-
 			long duration = System.currentTimeMillis() - startTime;
-	
 
 			return new ArrayList<>(sorted);
 		}
-		
+	}
 	
+	public static void stop() {
+		if (executor != null ) {
+			executor.shutdownNow();
+		}
 	}
 }
 

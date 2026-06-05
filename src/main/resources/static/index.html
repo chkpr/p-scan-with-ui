@@ -24,15 +24,17 @@
 				<form id="scan-form">
 					<ul>
 						<li><label for="host">Host</label><br> <input
-							type="text" id="host" name="scan_host" /></li>
+							type="text" id="host" name="scan_host" placeholder="Ex: scanme.nmap.org" autocomplete="off"/></li>
 
 						<li><label for="portsRange">Ports range</label><br> <input
-							type="text" id="portsRange" name="scan_portsRange" /></li>
+							type="text" id="portsRange" name="scan_portsRange" placeholder="Ex: 0-1024" autocomplete="off"/></li>
 
 						<li><label for="threads">Threads</label><br> <input
-							type="text" id="threads" name="scan_threads" /></li>
+							type="text" id="threads" name="scan_threads" placeholder="Ex: 50 (leave empty for default value)" autocomplete="off"></li>
 					</ul>
 					<button>Start scanning</button>
+					<button type="button" id="stop-button">Stop scan</button>
+					<button type="button" onclick="resetForm()" >Reset form fields</button>
 				</form>
 			</div>
 		</section>
@@ -79,7 +81,20 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 			document.getElementById('results-content').innerHTML = '<p class="placeholder">Error during scan.</p>';
 		});
 		
-	}); 
+	});
+	
+
+document.getElementById('stop-button').addEventListener('click', function(){
+	fetch(`/api/stop`);
+	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scan stopped.</p>';
+});
+
+
+	function resetForm() {
+	  document.getElementById("scan-form").reset();
+	}
+	
+	
 </script>
 
 </body>
