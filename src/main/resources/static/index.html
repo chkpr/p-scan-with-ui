@@ -47,5 +47,40 @@
 	<footer>
 		<div class="footer">© 2026 P-SCAN</div>
 	</footer>
+
+<script>
+document.getElementById('scan-form').addEventListener('submit', function(e) {
+	e.preventDefault();
+	const host = document.getElementById('host').value;
+	const range = document.getElementById('portsRange').value.split('-');
+	const threads = document.getElementById('threads').value || 20;
+	const startPort = range[0] || 1;
+	const endPort = range[1] || 1024;
+	
+	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>';	
+	
+	 fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
+		.then(r=> r.json())
+		.then(data => {
+			if (data.length === 0) {
+				document.getElementById('results-content').innerHtml='<p class="placeholder">No open ports found.</p>';
+			} else {
+				const rows = data.map(r =>
+					`<div class="result-row">
+						<span class="port">Port ${r.port}</span>
+						<span class="service">${r.service}</span>
+						<span class="time">${r.responseTime}ms</span>
+					</div>`
+				).join('');
+				document.getElementById('results-content').innerHTML = rows;
+			}
+		})
+		.catch(() => {
+			document.getElementById('results-content').innerHTML = '<p class="placeholder">Error during scan.</p>';
+		});
+		
+	}); 
+</script>
+
 </body>
 </html>
