@@ -12,7 +12,7 @@ public class ScanResult {
 		this.responseTime = response;
 	}
 	
-	public int getPort() {
+	public int getPortNumber() {
 		return portNumber;
 	}
 	

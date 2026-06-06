@@ -24,20 +24,29 @@
 				<form id="scan-form">
 					<ul>
 						<li><label for="host">Host</label><br> <input
-							type="text" id="host" name="scan_host" /></li>
+							type="text" id="host" name="scan_host"
+							placeholder="Ex: scanme.nmap.org; 192.168.0.1" autocomplete="off" required/></li>
 
 						<li><label for="portsRange">Ports range</label><br> <input
-							type="text" id="portsRange" name="scan_portsRange" /></li>
+							type="text" pattern="\d+-\d+" title="Start port - End port (ex: 1-1024)" id="portsRange" name="scan_portsRange"
+							placeholder="Ex: 1-1024" autocomplete="off" required/></li>
 
 						<li><label for="threads">Threads</label><br> <input
-							type="text" id="threads" name="scan_threads" /></li>
+							type="text" pattern="[1-9]\d*" title="thread number can't be null or negative" id="threads" name="scan_threads"
+							placeholder="Ex: 50 (leave empty for default value)"
+							autocomplete="off"></li>
 					</ul>
-					<button>Start scanning</button>
+					<button class="start-scanning-button">Start scanning</button>
+					<div class="stop-reset-buttons">
+					<button type="button" id="stop-button">Stop</button>
+					<button type="button" onclick="resetForm()">Reset</button>
+					</div>
 				</form>
 			</div>
 		</section>
 		<section class="scan-results">
 			<div class="results-header">Scan results</div>
+			<div id="progress-content" class="scan-progress">Scanning port</div>
 			<div id="results-content">
 				<p class="placeholder">No scan results yet.</p>
 			</div>
@@ -48,7 +57,7 @@
 		<div class="footer">© 2026 P-SCAN</div>
 	</footer>
 
-<script>
+	<script>
 document.getElementById('scan-form').addEventListener('submit', function(e) {
 	e.preventDefault();
 	const host = document.getElementById('host').value;
@@ -57,17 +66,57 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 	const startPort = range[0] || 1;
 	const endPort = range[1] || 1024;
 	
-	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>';	
+	const portsRangeInput = document.getElementById('portsRange');
+	if(isNaN(parseInt(startPort)) || isNaN(parseInt(endPort))) {
+		portsRangeInput.setCustomValidity('Please type a valid number.');
+		portsRangeInput.reportValidity();
+		return;
+}
 	
-	 fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
+	if (parseInt(startPort) > parseInt(endPort)) {
+		portsRangeInput.setCustomValidity('Start port must be lower than end port.');
+		portsRangeInput.reportValidity();
+		return;
+	}
+	
+	const threadsInput = document.getElementById('threads')
+	if (parseInt(threads) < 0) {
+		threadsInput.setCustomValidity('Threads number can\'t be negative');
+		portsRangeInput.reportValidity();
+		return;
+	}
+	
+	portsRangeInput.setCustomValidity('');
+	
+	const interval = setInterval(function() {
+		fetch(`/api/progress`)
+		 // Handling the response asynchronously
+   			.then(response => response.json())
+   
+  		// Processing the parsed JSON data
+   			.then(data => {
+       			const scanProgress = data.progress + "/" + data.total;
+       				if (data.total > 0 && data.progress === data.total ) {
+    	   			clearInterval(interval);
+       			}  
+       			document.getElementById('progress-content').innerHTML = scanProgress;
+   			})
+    			.catch(error => {
+       			console.error('Error fetching data:', error);
+   			});
+	}, 1000);
+	
+	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>' ;
+	
+	fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
 		.then(r=> r.json())
 		.then(data => {
 			if (data.length === 0) {
-				document.getElementById('results-content').innerHtml='<p class="placeholder">No open ports found.</p>';
+				document.getElementById('results-content').innerHTML='<p class="placeholder">No open ports found.</p>';
 			} else {
 				const rows = data.map(r =>
 					`<div class="result-row">
-						<span class="port">Port ${r.port}</span>
+						<span class="portNumber">Port ${r.portNumber}</span>
 						<span class="service">${r.service}</span>
 						<span class="time">${r.responseTime}ms</span>
 					</div>`
@@ -79,7 +128,18 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 			document.getElementById('results-content').innerHTML = '<p class="placeholder">Error during scan.</p>';
 		});
 		
-	}); 
+	});
+	
+
+document.getElementById('stop-button').addEventListener('click', function(){
+	fetch(`/api/stop`);
+	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scan stopped.</p>';
+});
+
+
+function resetForm() {
+	 document.getElementById("scan-form").reset();
+}	
 </script>
 
 </body>

@@ -1,9 +1,9 @@
 package com.learning.pScanWithUi;
 
-
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
 import java.lang.*;
 
@@ -17,6 +17,10 @@ public class PortScanner {
 	 * @param timeoutMS délai d'attente maximum en millisecondes
 	 * @return true si le port est ouvert, false sinon
 	 */
+
+	private static ExecutorService executor;
+	public static AtomicInteger progress = new AtomicInteger(0);
+	public static int totalPorts = 0;
 
 	public static boolean isPortOpen(String host, int port, int timeoutMs) {
 		try (Socket socket = new Socket()) {
@@ -46,7 +50,6 @@ public class PortScanner {
 		service.put(5432, "PostgreSQL");
 		service.put(8080, "HTTP-Alt");
 		return service.getOrDefault(port, "-");
-
 	}
 
 	public static void scanRange(String host, int startPort, int endPort, int timeoutMs) {
@@ -73,24 +76,27 @@ public class PortScanner {
 
 	}
 
-	public static List<ScanResult> scanRangeParallel(String host, int startPort, int endPort, int threads, int timeoutMs)
-			throws InterruptedException, ExecutionException {
+	public static List<ScanResult> scanRangeParallel(String host, int startPort, int endPort, int threads,
+			int timeoutMs) throws InterruptedException, ExecutionException {
 
-		ExecutorService executor = Executors.newFixedThreadPool(threads);
+		progress.set(0);
+		totalPorts = endPort - startPort + 1;
+
+		executor = Executors.newFixedThreadPool(threads);
 		ConcurrentLinkedQueue<ScanResult> openPorts = new ConcurrentLinkedQueue<>();
 		List<Future<?>> futures = new ArrayList<>();
 		long startTime = System.currentTimeMillis();
 
-
-
 		for (int port = startPort; port <= endPort; port++) {
 			final int p = port;
+
 			futures.add(executor.submit(() -> {
-			    long before = System.currentTimeMillis();
-			    if (isPortOpen(host, p, timeoutMs)) {
-			        int responseTime = (int)(System.currentTimeMillis() - before);
-			        openPorts.add(new ScanResult(p, getServiceName(p), responseTime));
-			    }
+				long before = System.currentTimeMillis();
+				if (isPortOpen(host, p, timeoutMs)) {
+					int responseTime = (int) (System.currentTimeMillis() - before);
+					openPorts.add(new ScanResult(p, getServiceName(p), responseTime));
+				}
+				progress.incrementAndGet();
 			}));
 		}
 
@@ -102,16 +108,17 @@ public class PortScanner {
 
 		// Affichage des résultats triés
 		List<ScanResult> sorted = new ArrayList<>(openPorts);
-		sorted.sort(Comparator.comparingInt(ScanResult::getPort));
+		sorted.sort(Comparator.comparingInt(ScanResult::getPortNumber));
 		{
-
 			long duration = System.currentTimeMillis() - startTime;
-	
 
 			return new ArrayList<>(sorted);
 		}
-		
-	
+	}
+
+	public static void stop() {
+		if (executor != null) {
+			executor.shutdownNow();
+		}
 	}
 }
-

@@ -22,12 +22,13 @@ header {
 }
 
 h1 {
-	border-bottom:1px solid #434543;
+	border-bottom:1px solid #9da19d;;
 	padding: 0 0 10px 0;
 }
 
 button {
-	background-color: #22C55E;
+	background-color:#acba8b;
+	margin: 3px 0;
 	padding: 5px 40px;
 	color: #121212;
 	border: 1px solid #434543;
@@ -38,7 +39,8 @@ button {
 
 label {
 	text-transform: uppercase;
-	font-size: 12px;
+	font-size: 14px;
+	color:#9da19d;
 }
 
 input {
@@ -46,7 +48,24 @@ input {
 	height: 40px;
 	background-color: #121212;
 	border: 1px solid #434543;
+	color: #9da19d;
+	font-size:16px;
 }
+
+input::placeholder {
+	color: #9da19d;
+	opacity: 0.5;
+	font-size: 16px;
+	font-style: italic;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #121212 inset !important;
+}
+
 
 footer {
  	border-top: 1px solid #434543;
@@ -73,10 +92,19 @@ footer {
 	display: flex;
 	flex-direction: column;
 	width: 400px;
-	height: 500px;
+	height: 520px;
 	padding: 40px;
 	background-color: #252625;
 	border: 1px solid #434543;
+}
+
+
+.start-scanning-button {
+	margin-top: 20px;
+}
+.stop-reset-buttons {
+	display: flex;
+	gap: 5px;
 }
 
 .scan-results {
@@ -89,6 +117,14 @@ footer {
     font-size: 12px;
     padding: 20px 40px 10px 40px;
     border-bottom: 1px solid #434543;
+}
+
+.scan-progress {
+	display: flex;
+    gap: 40px;
+    padding: 10px 40px;
+    border-bottom: 1px solid #434543;
+    font-size: 14px;
 }
 
 .placeholder {
