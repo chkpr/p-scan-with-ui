@@ -21,6 +21,7 @@ public class PortScanner {
 	private static ExecutorService executor;
 	public static AtomicInteger progress = new AtomicInteger(0);
 	public static int totalPorts = 0;
+	public static boolean isRunning = false;
 
 	public static boolean isPortOpen(String host, int port, int timeoutMs) {
 		try (Socket socket = new Socket()) {
@@ -79,8 +80,16 @@ public class PortScanner {
 	public static List<ScanResult> scanRangeParallel(String host, int startPort, int endPort, int threads,
 			int timeoutMs) throws InterruptedException, ExecutionException {
 
+		isRunning = true;
 		progress.set(0);
 		totalPorts = endPort - startPort + 1;
+		
+		try {
+			InetAddress.getByName(host);
+		} catch (UnknownHostException e) {
+			isRunning = false;
+			throw new IllegalArgumentException("Host not found: " + host);
+		}
 
 		executor = Executors.newFixedThreadPool(threads);
 		ConcurrentLinkedQueue<ScanResult> openPorts = new ConcurrentLinkedQueue<>();
@@ -101,8 +110,17 @@ public class PortScanner {
 		}
 
 		for (Future<?> future : futures) {
-			future.get(); // bloque jusqu'à ce que cette tâche soit finie
-		}
+			try {
+				future.get(); // bloque jusqu'à ce que cette tâche soit finie
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				isRunning = false;
+				return new ArrayList<>();
+				
+			} catch (ExecutionException e) {
+				//ignore
+			}
+			}
 		executor.shutdown();
 		executor.awaitTermination(10, TimeUnit.MINUTES);
 
@@ -111,14 +129,17 @@ public class PortScanner {
 		sorted.sort(Comparator.comparingInt(ScanResult::getPortNumber));
 		{
 			long duration = System.currentTimeMillis() - startTime;
-
+			isRunning = false;
 			return new ArrayList<>(sorted);
+			
 		}
+		
 	}
 
 	public static void stop() {
 		if (executor != null) {
 			executor.shutdownNow();
+			isRunning = false;
 		}
 	}
 }
