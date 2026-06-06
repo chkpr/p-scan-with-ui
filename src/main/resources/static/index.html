@@ -25,21 +25,26 @@
 					<ul>
 						<li><label for="host">Host</label><br> <input
 							type="text" id="host" name="scan_host"
-							placeholder="Ex: scanme.nmap.org; 192.168.0.1" autocomplete="off" required/></li>
+							placeholder="Ex: scanme.nmap.org; 192.168.0.1" autocomplete="off"
+							required /></li>
 
 						<li><label for="portsRange">Ports range</label><br> <input
-							type="text" pattern="\d+-\d+" title="Start port - End port (ex: 1-1024)" id="portsRange" name="scan_portsRange"
-							placeholder="Ex: 1-1024" autocomplete="off" required/></li>
+							type="text" pattern="\d+-\d+"
+							title="Start port - End port (ex: 1-1024)" id="portsRange"
+							name="scan_portsRange" placeholder="Ex: 1-1024"
+							autocomplete="off" required /></li>
 
 						<li><label for="threads">Threads</label><br> <input
-							type="text" pattern="[1-9]\d*" title="thread number can't be null or negative" id="threads" name="scan_threads"
+							type="text" pattern="[1-9]\d*"
+							title="thread number can't be null or negative" id="threads"
+							name="scan_threads"
 							placeholder="Ex: 50 (leave empty for default value)"
 							autocomplete="off"></li>
 					</ul>
 					<button class="start-scanning-button">Start scanning</button>
 					<div class="stop-reset-buttons">
-					<button type="button" id="stop-button">Stop</button>
-					<button type="button" onclick="resetForm()">Reset</button>
+						<button type="button" id="stop-button">Stop</button>
+						<button type="button" onclick="resetForm()">Reset</button>
 					</div>
 				</form>
 			</div>
@@ -58,6 +63,9 @@
 	</footer>
 
 	<script>
+	
+let interval = null;
+
 document.getElementById('scan-form').addEventListener('submit', function(e) {
 	e.preventDefault();
 	const host = document.getElementById('host').value;
@@ -79,66 +87,89 @@ document.getElementById('scan-form').addEventListener('submit', function(e) {
 		return;
 	}
 	
-	const threadsInput = document.getElementById('threads')
-	if (parseInt(threads) < 0) {
-		threadsInput.setCustomValidity('Threads number can\'t be negative');
-		portsRangeInput.reportValidity();
-		return;
-	}
-	
 	portsRangeInput.setCustomValidity('');
-	
-	const interval = setInterval(function() {
-		fetch(`/api/progress`)
-		 // Handling the response asynchronously
-   			.then(response => response.json())
-   
-  		// Processing the parsed JSON data
-   			.then(data => {
-       			const scanProgress = data.progress + "/" + data.total;
-       				if (data.total > 0 && data.progress === data.total ) {
-    	   			clearInterval(interval);
-       			}  
-       			document.getElementById('progress-content').innerHTML = scanProgress;
-   			})
-    			.catch(error => {
-       			console.error('Error fetching data:', error);
-   			});
-	}, 1000);
-	
-	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>' ;
-	
-	fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
-		.then(r=> r.json())
-		.then(data => {
-			if (data.length === 0) {
-				document.getElementById('results-content').innerHTML='<p class="placeholder">No open ports found.</p>';
+
+	document.getElementById('progress-content').innerHTML = '';
+
+	fetch(`/api/status`)
+		.then(r => r.json())
+		.then(isRunning => {
+			if(isRunning) {
+				document.getElementById('results-content').innerHTML = '<p class="placeholder">Scan already in progress.</p>';
 			} else {
-				const rows = data.map(r =>
-					`<div class="result-row">
-						<span class="portNumber">Port ${r.portNumber}</span>
-						<span class="service">${r.service}</span>
-						<span class="time">${r.responseTime}ms</span>
-					</div>`
-				).join('');
-				document.getElementById('results-content').innerHTML = rows;
+				interval = setInterval(function() {
+					fetch(`/api/progress`)
+					 // Handling the response asynchronously
+			   			.then(response => response.json())
+			   
+			  		// Processing the parsed JSON data
+			   			.then(data => {
+			       			const scanProgress = data.progress + "/" + data.total;
+			       				if (data.total > 0 && data.progress === data.total ) {
+			    	   			clearInterval(interval);
+			       			}  
+			       			document.getElementById('progress-content').innerHTML = scanProgress;
+			   			})
+			    			.catch(error => {
+			       			console.error('Error fetching data:', error);
+			   			});
+				}, 1000);
+				
+				document.getElementById('results-content').innerHTML = '<p class="placeholder">Scanning...</p>' ;
+				
+				fetch(`/api/scan?host=${host}&startPort=${startPort}&endPort=${endPort}&threads=${threads}&timeoutMs=500`)
+					.then(r => {
+        				if (!r.ok) {
+            			return r.text().then(msg => { throw new Error(msg); });
+        			}
+        				return r.json();
+    				})
+					.then(data => {
+					    if (!Array.isArray(data)) {
+					        clearInterval(interval);
+					        document.getElementById('results-content').innerHTML = '<p class="placeholder">Host not found or unreachable.</p>';
+					        return;
+						} else if (data.length === 0) {
+						    document.getElementById('results-content').innerHTML = '<p class="placeholder">No open ports found. Check that the host is reachable and the address is correct.</p>';
+				
+						} else {
+							const rows = data.map(r =>
+								`<div class="result-row">
+									<span class="portNumber">Port ${r.portNumber}</span>
+									<span class="service">${r.service}</span>
+									<span class="time">${r.responseTime}ms</span>
+								</div>`
+							).join('');
+							document.getElementById('results-content').innerHTML = rows;
+					}
+				})
+				.catch((error) => {
+					clearInterval(interval);
+					const message = error.message || 'Error during scan.';
+					document.getElementById('results-content').innerHTML = `<p class="placeholder">${message}</p>`;
+				});
 			}
-		})
-		.catch(() => {
-			document.getElementById('results-content').innerHTML = '<p class="placeholder">Error during scan.</p>';
-		});
-		
-	});
-	
+			});
+			
+			});		
 
 document.getElementById('stop-button').addEventListener('click', function(){
-	fetch(`/api/stop`);
-	document.getElementById('results-content').innerHTML = '<p class="placeholder">Scan stopped.</p>';
+	clearInterval(interval);
+    document.getElementById('progress-content').innerHTML = 'Stoping scan, please wait...';
+    
+	fetch(`/api/stop`)
+		.then(() => {
+			document.getElementById('progress-content').innerHTML = '';
+			document.getElementById('results-content').innerHTML = '<p class="placeholder">Scan stopped. Reset the fields to launch a new scan.</p>';
+			document.querySelector('.start-scanning-button').disabled = true;
+		});
 });
-
 
 function resetForm() {
 	 document.getElementById("scan-form").reset();
+	   document.getElementById('results-content').innerHTML = '<p class="placeholder">No scan results yet.</p>';
+	   document.getElementById('progress-content').innerHTML = '';
+	   document.querySelector('.start-scanning-button').disabled = false;
 }	
 </script>
 
