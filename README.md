@@ -11,7 +11,9 @@ Built as a learning project to explore Java concurrency, network programming, an
 
 ## How to run
 
-**Prerequisites:** Java 17+, Maven 3.6+
+**Prerequisites:** 
+
+Java 17+, Maven 3.6+
 
 ```bash
 git clone https://github.com/chkpr/p-scan-with-ui.git
